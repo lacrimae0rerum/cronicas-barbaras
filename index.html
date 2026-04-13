@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronicas Barbaras — Grafo de Conocimiento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Cargando grafo de conocimiento...</p>
+      <p class="loading-sub">Cronicas Barbaras</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <div class="header-brand">
+        <h1 class="header-title">CRONICAS BARBARAS</h1>
+        <span class="header-subtitle">Grafo de Conocimiento</span>
+      </div>
+      <div class="header-stats" id="header-stats">
+        <div class="stat-pill">
+          <span class="stat-value" id="stat-episodes">--</span>
+          <span class="stat-label">episodios</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-value" id="stat-people">--</span>
+          <span class="stat-label">personas</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-value" id="stat-entities">--</span>
+          <span class="stat-label">entidades</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-value" id="stat-range">--</span>
+          <span class="stat-label">periodo</span>
+        </div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="search-box" id="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Buscar nodos..." autocomplete="off">
+        <span class="search-count" id="search-count"></span>
+        <button class="search-clear" id="search-clear" title="Limpiar busqueda">&times;</button>
+      </div>
+      <div class="filter-group">
+        <select id="filter-type" class="filter-select">
+          <option value="all">Todos los tipos</option>
+          <option value="person">Personas</option>
+          <option value="organization">Organizaciones</option>
+          <option value="work">Obras</option>
+          <option value="concept">Conceptos</option>
+          <option value="event">Eventos</option>
+          <option value="location">Lugares</option>
+          <option value="theme">Temas</option>
+          <option value="episode">Episodios</option>
+        </select>
+        <select id="filter-mode" class="filter-select" title="Modo de visualizacion">
+          <option value="community">Modo: Comunidades</option>
+          <option value="episodes">Modo: Episodios</option>
+        </select>
+        <select id="filter-color" class="filter-select" title="Color de nodos">
+          <option value="type">Color: Tipo</option>
+          <option value="community">Color: Comunidad</option>
+        </select>
+      </div>
+      <div class="toggle-group">
+        <label class="toggle-label" title="Mostrar etiquetas solo al hacer zoom cercano">
+          <input type="checkbox" id="toggle-labels" checked>
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Etiquetas</span>
+        </label>
+        <button id="beautify-btn" class="beautify-btn" title="Reorganizar el grafo con gravedad por comunidad">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          <span>Beautify</span>
+        </button>
+      </div>
+      <div class="slider-group">
+        <label class="slider-label" title="Distancia entre nodos que comparten comunidad">
+          <span class="slider-text">Nodos</span>
+          <input type="range" id="slider-intra" min="0.2" max="1.6" step="0.05" value="0.55">
+          <span class="slider-value" id="slider-intra-val">0.55</span>
+        </label>
+        <label class="slider-label" title="Distancia entre clusters de comunidades">
+          <span class="slider-text">Clusters</span>
+          <input type="range" id="slider-inter" min="0.7" max="2.8" step="0.05" value="1.00">
+          <span class="slider-value" id="slider-inter-val">1.00</span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <div class="graph-container" id="graph-container">
+      <canvas id="graph-canvas"></canvas>
+
+      <!-- Zoom controls -->
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in" title="Acercar">+</button>
+        <button class="zoom-btn" id="zoom-out" title="Alejar">&minus;</button>
+        <button class="zoom-btn" id="zoom-reset" title="Restablecer vista">&#x2302;</button>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend" id="legend">
+        <div class="legend-title">Leyenda</div>
+        <div class="legend-items" id="legend-items"></div>
+      </div>
+
+      <!-- Hover tooltip -->
+      <div class="graph-tooltip" id="graph-tooltip" style="display:none;"></div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-empty" id="sidebar-empty">
+        <div class="sidebar-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+        </div>
+        <p class="sidebar-empty-title">Selecciona un nodo</p>
+        <p class="sidebar-empty-text">Haz clic en cualquier nodo del grafo para ver sus detalles aqui.</p>
+      </div>
+      <div class="sidebar-content" id="sidebar-content" style="display:none;">
+        <button class="sidebar-close" id="sidebar-close" title="Cerrar panel">&times;</button>
+        <div class="sidebar-header" id="sidebar-header"></div>
+        <div class="sidebar-body" id="sidebar-body"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Timeline -->
+  <footer class="timeline-bar" id="timeline-bar">
+    <div class="timeline-label">Timeline</div>
+    <div class="timeline-track" id="timeline-track"></div>
+  </footer>
+
+  <!-- Error overlay -->
+  <div id="error-overlay" class="error-overlay" style="display:none;">
+    <div class="error-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E74C3C" stroke-width="2" width="48" height="48">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+      </svg>
+      <h2>Sin datos disponibles</h2>
+      <p id="error-message">No se encontro el archivo graph.json. Ejecuta el pipeline de procesamiento primero.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
